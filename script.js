@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Use all required fields from the API
-    const apiEndpoint = 'https://restcountries.com/v3.1/all?fields=name,flags,region,subregion,population,capital,area,languages,currencies,timezones,borders,idd';
+    // Use all required fields from the API (updated, removed borders and idd)
+    const apiEndpoint = 'https://restcountries.com/v3.1/all?fields=name,flags,region,subregion,population,capital,area,languages,currencies,timezones';
     const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
     const clearSearch = document.getElementById('clearSearch');
@@ -231,8 +231,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="detail-item"><strong>Languages:</strong> <span>${country.languages ? Object.values(country.languages).join(', ') : 'N/A'}</span></div>
                             <div class="detail-item"><strong>Currencies:</strong> <span>${country.currencies ? Object.values(country.currencies).map(c => c.name).join(', ') : 'N/A'}</span></div>
                             <div class="detail-item"><strong>Timezones:</strong> <span>${country.timezones.join(', ')}</span></div>
-                            <div class="detail-item"><strong>Borders:</strong> <span>${country.borders ? country.borders.join(', ') : 'N/A'}</span></div>
-                            <div class="detail-item"><strong>Calling Codes:</strong> <span>${country.idd.root}${country.idd.suffixes ? country.idd.suffixes[0] : ''}</span></div>
                         </div>
                     </div>
                 </div>
