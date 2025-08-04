@@ -1,7 +1,7 @@
 // Complete Country Information Portal JavaScript
 class CountryPortal {
     constructor() {
-        this.apiEndpoint = 'https://restcountries.com/v3.1/all?fields=name,flags,region,subregion,population,capital,area,languages,currencies,timezones';
+ this.apiEndpoint = 'https://restcountries.com/v3.1/all?fields=name,flags,region,subregion,population,capital,area,languages,currencies,timezones';
         this.allCountries = [];
         this.filteredCountries = [];
         this.currentPage = 1;
@@ -54,6 +54,10 @@ class CountryPortal {
         this.countryModal = document.getElementById('countryModal');
         this.flagModal = document.getElementById('flagModal');
         
+        // Stats elements
+        this.statsCountrySelect = document.getElementById('statsCountrySelect');
+        this.countryStats = document.getElementById('countryStats');
+        
         this.setupEventListeners();
     }
 
@@ -82,6 +86,11 @@ class CountryPortal {
         // Comparison
         this.compareCountry1?.addEventListener('change', () => this.handleComparison());
         this.compareCountry2?.addEventListener('change', () => this.handleComparison());
+        
+        // Stats
+        this.statsCountrySelect.addEventListener('change', (e) => {
+            this.showCountryStats(e.target.value);
+        });
         
         // Modal close buttons
         document.addEventListener('click', (e) => {
@@ -114,6 +123,8 @@ class CountryPortal {
         this.applyFilters();
         this.renderFlagGallery();
         this.updateStatistics();
+        this.populateStatsCountryDropdown();
+        this.showCountryStats(this.statsCountrySelect.value);
         this.hideLoading();
     }
 
@@ -221,9 +232,7 @@ class CountryPortal {
         
         this.filteredCountries = this.allCountries.filter(country => {
             const nameMatch = country.name.common.toLowerCase().includes(searchQuery) ||
-                            (country.capital && country.capital[0] && country.capital[0].toLowerCase().includes(searchQuery)) ||
-                            (country.cca2 && country.cca2.toLowerCase().includes(searchQuery)) ||
-                            (country.cca3 && country.cca3.toLowerCase().includes(searchQuery));
+                            (country.capital && country.capital[0] && country.capital[0].toLowerCase().includes(searchQuery));
             
             const regionMatch = !selectedRegion || country.region === selectedRegion;
             const subregionMatch = !selectedSubregion || country.subregion === selectedSubregion;
@@ -378,28 +387,6 @@ class CountryPortal {
                                 <strong>Timezones:</strong> 
                                 <span>${country.timezones ? country.timezones.join(', ') : 'N/A'}</span>
                             </div>
-                            <div class="detail-item">
-                                <strong>Calling Code:</strong> 
-                                <span>${this.getCallingCode(country)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h3>Geographic Info</h3>
-                        <div class="detail-list">
-                            <div class="detail-item">
-                                <strong>Borders:</strong> 
-                                <span>${country.borders ? country.borders.join(', ') : 'None'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Coordinates:</strong> 
-                                <span>${country.latlng ? country.latlng.join(', ') : 'N/A'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Landlocked:</strong> 
-                                <span>${country.landlocked ? 'Yes' : 'No'}</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -411,61 +398,46 @@ class CountryPortal {
 
     // Flag Gallery
     renderFlagGallery() {
-        if (!this.flagsContainer) return;
-        
+        // Get selected region from the dropdown
         const selectedRegion = this.flagRegionFilter?.value || '';
-        const countriesToShow = selectedRegion === '' 
-            ? this.allCountries 
-            : this.allCountries.filter(country => country.region === selectedRegion);
-        
+        let countries = this.allCountries;
+
+        // Filter by region if selected
+        if (selectedRegion && selectedRegion !== 'All' && selectedRegion !== '') {
+            countries = countries.filter(c => c.region === selectedRegion);
+        }
+
+        // Clear container
         this.flagsContainer.innerHTML = '';
-        
-        countriesToShow.forEach(country => {
+
+        // Render each flag as a flag-item (for grid/list view)
+        countries.forEach(country => {
             const flagItem = this.createFlagItem(country);
             this.flagsContainer.appendChild(flagItem);
         });
-        
-        // Set default view
-        this.flagsContainer.classList.add('grid-view');
     }
 
     createFlagItem(country) {
         const flagItem = document.createElement('div');
         flagItem.classList.add('flag-item');
         flagItem.innerHTML = `
-            <img src="${country.flags.png}" alt="${country.name.common} flag" class="flag-image" loading="lazy">
+            <img src="${country.flags.svg}" alt="Flag of ${country.name.common}" class="flag-img" loading="lazy">
             <div class="flag-name">${country.name.common}</div>
         `;
-        
         flagItem.addEventListener('click', () => this.showFlagModal(country));
         return flagItem;
     }
 
-    showFlagModal(country) {
-        const modalFlagImg = document.getElementById('modalFlagImg');
-        const modalFlagCountry = document.getElementById('modalFlagCountry');
-        const modalFlagDetails = document.getElementById('modalFlagDetails');
-        
-        if (modalFlagImg && modalFlagCountry && modalFlagDetails) {
-            modalFlagImg.src = country.flags.svg;
-            modalFlagImg.alt = `${country.name.common} flag`;
-            modalFlagCountry.textContent = country.name.common;
-            modalFlagDetails.textContent = `${country.region} • Population: ${this.formatNumber(country.population)}`;
-            
-            this.flagModal.classList.add('active');
-        }
-    }
-
     toggleFlagView(view) {
         if (!this.flagsContainer) return;
-        
+
         this.gridViewBtn?.classList.toggle('active', view === 'grid');
         this.listViewBtn?.classList.toggle('active', view === 'list');
-        
+
         this.flagsContainer.classList.toggle('grid-view', view === 'grid');
         this.flagsContainer.classList.toggle('list-view', view === 'list');
-        
-        // Update flag item classes
+
+        // Update flag item classes for list view
         const flagItems = this.flagsContainer.querySelectorAll('.flag-item');
         flagItems.forEach(item => {
             item.classList.toggle('list-view', view === 'list');
@@ -484,7 +456,7 @@ class CountryPortal {
             select.innerHTML = '<option value="">Choose a country...</option>';
             sortedCountries.forEach(country => {
                 const option = document.createElement('option');
-                option.value = country.cca3;
+                option.value = country.name.common;
                 option.textContent = country.name.common;
                 select.appendChild(option);
             });
@@ -492,16 +464,16 @@ class CountryPortal {
     }
 
     handleComparison() {
-        const country1Code = this.compareCountry1?.value;
-        const country2Code = this.compareCountry2?.value;
+        const country1Name = this.compareCountry1?.value;
+        const country2Name = this.compareCountry2?.value;
         
-        if (!country1Code || !country2Code) {
+        if (!country1Name || !country2Name) {
             this.comparisonResult.innerHTML = '';
             return;
         }
         
-        const country1 = this.allCountries.find(c => c.cca3 === country1Code);
-        const country2 = this.allCountries.find(c => c.cca3 === country2Code);
+        const country1 = this.allCountries.find(c => c.name.common === country1Name);
+        const country2 = this.allCountries.find(c => c.name.common === country2Name);
         
         if (country1 && country2) {
             this.renderComparison(country1, country2);
@@ -754,6 +726,33 @@ class CountryPortal {
         if (!country.idd || !country.idd.root) return 'N/A';
         const suffixes = country.idd.suffixes || [''];
         return `${country.idd.root}${suffixes[0]}`;
+    }
+
+    // Stats
+    populateStatsCountryDropdown() {
+        this.statsCountrySelect.innerHTML = '';
+        this.allCountries.forEach(country => {
+            const option = document.createElement('option');
+            option.value = country.name.common;
+            option.textContent = country.name.common;
+            this.statsCountrySelect.appendChild(option);
+        });
+    }
+
+    showCountryStats(countryName) {
+        const country = this.allCountries.find(c => c.name.common === countryName);
+        if (!country) return;
+        this.countryStats.innerHTML = `
+            <h3>${country.name.common}</h3>
+            <p><strong>Population:</strong> ${country.population.toLocaleString()}</p>
+            <p><strong>Area:</strong> ${country.area.toLocaleString()} km²</p>
+            <p><strong>Region:</strong> ${country.region}</p>
+            <p><strong>Subregion:</strong> ${country.subregion || 'N/A'}</p>
+            <p><strong>Capital:</strong> ${country.capital ? country.capital.join(', ') : 'N/A'}</p>
+            <p><strong>Languages:</strong> ${country.languages ? Object.values(country.languages).join(', ') : 'N/A'}</p>
+            <p><strong>Currencies:</strong> ${country.currencies ? Object.values(country.currencies).map(cur => cur.name).join(', ') : 'N/A'}</p>
+            <p><strong>Timezones:</strong> ${country.timezones ? country.timezones.join(', ') : 'N/A'}</p>
+        `;
     }
 }
 

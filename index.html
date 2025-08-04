@@ -113,7 +113,7 @@
                     <option value="Europe">Europe</option>
                     <option value="Oceania">Oceania</option>
                 </select>
-                
+                <input type="text" id="flagSearchInput" class="filter-select" placeholder="Search flags...">
                 <div class="view-toggle">
                     <button id="gridView" class="view-btn active">
                         <i class="fas fa-th"></i>
@@ -217,6 +217,17 @@
                     <canvas id="populationChart"></canvas>
                 </div>
             </div>
+
+            <!-- Additional Statistics Section -->
+            <div class="additional-stats">
+                <h3>Country-Specific Statistics</h3>
+                <select id="statsCountrySelect" class="filter-select">
+                    <option value="">Select a country...</option>
+                </select>
+                <div id="countryStats" class="country-stats-card">
+                    <!-- Country statistics will be displayed here -->
+                </div>
+            </div>
         </section>
     </main>
 
@@ -253,6 +264,6 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

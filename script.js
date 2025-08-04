@@ -10,33 +10,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetFilters = document.getElementById('resetFilters');
     const countriesGrid = document.getElementById('countriesGrid');
     const paginationElement = document.getElementById('pagination');
-    
-    // Navigation elements
-    const navLinks = document.querySelectorAll('.nav-link');
-    const sections = document.querySelectorAll('.section');
-    
-    // Flag gallery elements
-    const flagRegionFilter = document.getElementById('flagRegionFilter');
-    const flagsContainer = document.getElementById('flagsContainer');
-    const gridViewBtn = document.getElementById('gridView');
-    const listViewBtn = document.getElementById('listView');
-    
-    // Comparison elements
+    // Comparison selectors
     const compareCountry1 = document.getElementById('compareCountry1');
     const compareCountry2 = document.getElementById('compareCountry2');
     const comparisonResult = document.getElementById('comparisonResult');
-    
-    // Statistics elements
-    const totalCountries = document.getElementById('totalCountries');
-    const totalPopulation = document.getElementById('totalPopulation');
-    const totalArea = document.getElementById('totalArea');
-    const totalLanguages = document.getElementById('totalLanguages');
-    
+    // Navigation elements
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('.section');
+    // Flag gallery elements
+    const flagRegionFilter = document.getElementById('flagRegionFilter');
+    const flagSearchInput = document.getElementById('flagSearchInput');
+    const flagsContainer = document.getElementById('flagsContainer');
+    const gridViewBtn = document.getElementById('gridView');
+    const listViewBtn = document.getElementById('listView');
+    let flagView = 'grid'; // default view
+
+    // Declare global variables for data and pagination
     let allCountries = [];
     let filteredCountries = [];
     let currentPage = 1;
     const itemsPerPage = 20;
-    let regionChart, populationChart;
+
+    // Only render flags when a region is selected
+    flagRegionFilter.addEventListener('change', () => {
+        if (flagRegionFilter.value === '') {
+            flagsContainer.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-flag"></i>
+                    <p>Please select a region to view flags.</p>
+                </div>
+            `;
+        } else {
+            renderFlagGallery();
+        }
+        flagSearchInput.value = '';
+    });
+
+    // Disable search input until a region is selected
+    flagSearchInput.disabled = true;
+    flagRegionFilter.addEventListener('change', () => {
+        flagSearchInput.disabled = flagRegionFilter.value === '';
+    });
 
     // Fetch countries data from the API
     async function fetchCountries() {
@@ -47,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             allCountries = await response.json();
             initializeApp();
+            updateStatistics(); // <-- Add this
+            populateStatsCountryDropdown(); // <-- Add this
+            createCharts(); // <-- Add this
         } catch (error) {
             console.error(error);
             const errorMessage = document.getElementById('errorMessage');
@@ -57,10 +74,160 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Update statistics cards
+    function updateStatistics() {
+        const totalCountries = document.getElementById('totalCountries');
+        const totalPopulation = document.getElementById('totalPopulation');
+        const totalArea = document.getElementById('totalArea');
+        const totalLanguages = document.getElementById('totalLanguages');
+
+        if (!allCountries.length) return;
+
+        totalCountries.textContent = allCountries.length.toLocaleString();
+
+        let population = 0;
+        let area = 0;
+        const languagesSet = new Set();
+
+        allCountries.forEach(c => {
+            population += c.population || 0;
+            area += c.area || 0;
+            if (c.languages) {
+                Object.values(c.languages).forEach(lang => languagesSet.add(lang));
+            }
+        });
+
+        totalPopulation.textContent = population.toLocaleString();
+        totalArea.textContent = area.toLocaleString();
+        totalLanguages.textContent = languagesSet.size.toLocaleString();
+    }
+
+    // Populate country dropdown for statistics
+    function populateStatsCountryDropdown() {
+        const statsCountrySelect = document.getElementById('statsCountrySelect');
+        if (!statsCountrySelect) return;
+        statsCountrySelect.innerHTML = '<option value="">Select a country...</option>';
+        allCountries
+            .sort((a, b) => a.name.common.localeCompare(b.name.common))
+            .forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.name.common;
+                option.textContent = country.name.common;
+                statsCountrySelect.appendChild(option);
+            });
+    }
+
+    // Show country-specific statistics
+    function showCountryStats(countryName) {
+        const countryStats = document.getElementById('countryStats');
+        if (!countryStats) return;
+        if (!countryName) {
+            countryStats.innerHTML = '';
+            return;
+        }
+        const country = allCountries.find(c => c.name.common === countryName);
+        if (!country) {
+            countryStats.innerHTML = '<p>Country not found.</p>';
+            return;
+        }
+        countryStats.innerHTML = `
+            <div class="country-stats-header">
+                <img src="${country.flags.png}" alt="${country.name.common} flag" class="country-flag-icon">
+                <h3 class="country-title">${country.name.common}</h3>
+            </div>
+            <div class="country-stats-body">
+                <div class="country-stats-grid">
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Population</div>
+                            <div class="country-stat-value">${country.population.toLocaleString()}</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-map"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Area</div>
+                            <div class="country-stat-value">${country.area.toLocaleString()} km²</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-globe-americas"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Region</div>
+                            <div class="country-stat-value">${country.region}</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Subregion</div>
+                            <div class="country-stat-value">${country.subregion || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-city"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Capital</div>
+                            <div class="country-stat-value">${country.capital ? country.capital.join(', ') : 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Languages</div>
+                            <div class="country-stat-value">${country.languages ? Object.values(country.languages).join(', ') : 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Currencies</div>
+                            <div class="country-stat-value">${country.currencies ? Object.values(country.currencies).map(cur => cur.name).join(', ') : 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div class="country-stat-item">
+                        <div class="country-stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="country-stat-info">
+                            <div class="country-stat-label">Timezones</div>
+                            <div class="country-stat-value">${country.timezones ? country.timezones.join(', ') : 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     // Initialize application
-    function initializeApp() {
-        updateRegionList();
-        applyFilters();
+function initializeApp() {
+    updateRegionList();
+    flagRegionFilter.value = 'Europe'; // Set default region here
+    flagSearchInput.disabled = false; // Enable search since we have a default region
+    renderFlagGallery();
+    applyFilters();
         themeToggle.addEventListener('click', toggleTheme);
         searchInput.addEventListener('input', applyFilters);
         clearSearch.addEventListener('click', clearSearchInput);
@@ -82,39 +249,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Flag gallery listeners
         flagRegionFilter.addEventListener('change', renderFlagGallery);
-
-        gridViewBtn.addEventListener('click', () => toggleFlagView('grid'));
-        listViewBtn.addEventListener('click', () => toggleFlagView('list'));
+        flagSearchInput.addEventListener('input', renderFlagGallery);
+        gridViewBtn.addEventListener('click', () => {
+            flagView = 'grid';
+            toggleFlagView(flagView);
+            renderFlagGallery();
+        });
+        listViewBtn.addEventListener('click', () => {
+            flagView = 'list';
+            toggleFlagView(flagView);
+            renderFlagGallery();
+        });
+        
+        // Comparison listeners
+        populateComparisonSelectors();
+        compareCountry1.addEventListener('change', handleComparison);
+        compareCountry2.addEventListener('change', handleComparison);
     }
 
-    // Render flag gallery
+    // Render flag gallery with search and view toggle
     function renderFlagGallery() {
         flagsContainer.innerHTML = '';
         const selectedRegion = flagRegionFilter.value;
-        const countriesToShow = selectedRegion === '' 
-            ? allCountries 
-            : allCountries.filter(country => country.region === selectedRegion);
-        
+        const searchQuery = flagSearchInput.value.trim().toLowerCase();
+
+        if (!selectedRegion) {
+            flagsContainer.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-flag"></i>
+                    <p>Please select a region to view flags.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let countriesToShow = allCountries.filter(country => country.region === selectedRegion);
+
+        if (searchQuery !== '') {
+            countriesToShow = countriesToShow.filter(country =>
+                country.name.common.toLowerCase().includes(searchQuery)
+            );
+        }
+
+        if (countriesToShow.length === 0) {
+            flagsContainer.innerHTML = `
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <p>No flags found.</p>
+                </div>
+            `;
+            return;
+        }
+
         countriesToShow.forEach(country => {
             const flagItem = document.createElement('div');
             flagItem.classList.add('flag-item');
+            if (flagView === 'list') flagItem.classList.add('list-view');
             flagItem.innerHTML = `
-                <img src="${country.flags.png}" alt="${country.name.common}"> 
+                <img src="${country.flags.png}" alt="${country.name.common}" class="flag-img">
                 <div class="flag-name">${country.name.common}</div>
             `;
             flagsContainer.appendChild(flagItem);
         });
     }
 
-    // Toggle flag view
-    function toggleFlagView(view) {
-        if (view === 'grid') {
-            flagsContainer.classList.add('grid-view');
-            flagsContainer.classList.remove('list-view');
-        } else {
-            flagsContainer.classList.add('list-view');
-            flagsContainer.classList.remove('grid-view');
+    // Listen for search input only when region is selected
+    flagSearchInput.addEventListener('input', () => {
+        if (flagRegionFilter.value !== '') {
+            renderFlagGallery();
         }
+    });
+
+    // Toggle flag view (grid/list)
+    function toggleFlagView(view) {
+        gridViewBtn.classList.toggle('active', view === 'grid');
+        listViewBtn.classList.toggle('active', view === 'list');
+        flagsContainer.classList.toggle('grid-view', view === 'grid');
+        flagsContainer.classList.toggle('list-view', view === 'list');
     }
 
     // Toggle theme between light and dark
@@ -262,7 +473,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update region list for filter options
     function updateRegionList() {
-        const regions = new Set(allCountries.map(country => country.region));
+        // Clear previous options except the first one
+        while (regionFilter.options.length > 1) {
+            regionFilter.remove(1);
+        }
+        const regions = Array.from(new Set(allCountries.map(country => country.region))).filter(Boolean);
         regions.forEach(region => {
             const optionElement = document.createElement('option');
             optionElement.value = region;
@@ -270,6 +485,269 @@ document.addEventListener('DOMContentLoaded', () => {
             regionFilter.appendChild(optionElement);
         });
     }
+
+    // Populate comparison selectors with countries
+    function populateComparisonSelectors() {
+        if (!compareCountry1 || !compareCountry2) return;
+        
+        const sortedCountries = [...allCountries].sort((a, b) => 
+            a.name.common.localeCompare(b.name.common)
+        );
+        
+        [compareCountry1, compareCountry2].forEach(select => {
+            select.innerHTML = '<option value="">Choose a country...</option>';
+            sortedCountries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.name.common;
+                option.textContent = country.name.common;
+                select.appendChild(option);
+            });
+        });
+    }
+
+    // Handle comparison functionality
+    function handleComparison() {
+        const country1Name = compareCountry1?.value;
+        const country2Name = compareCountry2?.value;
+        
+        if (!country1Name || !country2Name) {
+            comparisonResult.innerHTML = '';
+            return;
+        }
+        
+        const country1 = allCountries.find(c => c.name.common === country1Name);
+        const country2 = allCountries.find(c => c.name.common === country2Name);
+        
+        if (country1 && country2) {
+            renderComparison(country1, country2);
+        }
+    }
+
+    // Render the comparison result
+    function renderComparison(country1, country2) {
+        comparisonResult.innerHTML = `
+            <div class="compare-card">
+                <img src="${country1.flags.png}" alt="${country1.name.common} flag" class="compare-flag">
+                <h3 class="compare-name">${country1.name.common}</h3>
+                <div class="compare-details">
+                    ${createComparisonDetails(country1)}
+                </div>
+            </div>
+            <div class="compare-card">
+                <img src="${country2.flags.png}" alt="${country2.name.common} flag" class="compare-flag">
+                <h3 class="compare-name">${country2.name.common}</h3>
+                <div class="compare-details">
+                    ${createComparisonDetails(country2)}
+                </div>
+            </div>
+        `;
+    }
+
+    // Create comparison details for a country
+    function createComparisonDetails(country) {
+        return `
+            <div class="compare-detail">
+                <strong>Capital:</strong>
+                <span>${country.capital ? country.capital[0] : 'N/A'}</span>
+            </div>
+            <div class="compare-detail">
+                <strong>Population:</strong>
+                <span>${country.population ? country.population.toLocaleString() : 'N/A'}</span>
+            </div>
+            <div class="compare-detail">
+                <strong>Area:</strong>
+                <span>${country.area ? country.area.toLocaleString() : 'N/A'} km²</span>
+            </div>
+            <div class="compare-detail">
+                <strong>Region:</strong>
+                <span>${country.region}</span>
+            </div>
+            <div class="compare-detail">
+                <strong>Languages:</strong>
+                <span>${country.languages ? Object.values(country.languages).join(', ') : 'N/A'}</span>
+            </div>
+            <div class="compare-detail">
+                <strong>Currency:</strong>
+                <span>${country.currencies ? Object.values(country.currencies).map(c => c.name).join(', ') : 'N/A'}</span>
+            </div>
+        `;
+    }
+
+    // Create Charts
+    function createCharts() {
+        createRegionChart();
+        createPopulationChart();
+    }
+
+    // Create Countries by Region Chart
+    function createRegionChart() {
+        const regionCanvas = document.getElementById('regionChart');
+        if (!regionCanvas) return;
+
+        // Count countries by region
+        const regionCounts = {};
+        allCountries.forEach(country => {
+            const region = country.region || 'Unknown';
+            regionCounts[region] = (regionCounts[region] || 0) + 1;
+        });
+
+        const regions = Object.keys(regionCounts);
+        const counts = Object.values(regionCounts);
+        const colors = [
+            '#374151', // Primary
+            '#6b7280', // Primary light
+            '#9ca3af', // Secondary
+            '#d1d5db', // Accent
+            '#10b981', // Success
+            '#f59e0b', // Warning
+            '#ef4444'  // Danger
+        ];
+
+        new Chart(regionCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: regions,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: colors.slice(0, regions.length),
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
+                    hoverBorderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} countries (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true
+                }
+            }
+        });
+    }
+
+    // Create Top 10 Most Populous Countries Chart
+    function createPopulationChart() {
+        const populationCanvas = document.getElementById('populationChart');
+        if (!populationCanvas) return;
+
+        // Get top 10 most populous countries
+        const sortedCountries = [...allCountries]
+            .filter(country => country.population > 0)
+            .sort((a, b) => b.population - a.population)
+            .slice(0, 10);
+
+        const countryNames = sortedCountries.map(country => country.name.common);
+        const populations = sortedCountries.map(country => country.population);
+
+        // Create gradient colors
+        const ctx = populationCanvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, '#374151');
+        gradient.addColorStop(1, '#9ca3af');
+
+        new Chart(populationCanvas, {
+            type: 'bar',
+            data: {
+                labels: countryNames,
+                datasets: [{
+                    label: 'Population',
+                    data: populations,
+                    backgroundColor: gradient,
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 1000000000) {
+                                    return (value / 1000000000).toFixed(1) + 'B';
+                                } else if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(0) + 'M';
+                                } else if (value >= 1000) {
+                                    return (value / 1000).toFixed(0) + 'K';
+                                }
+                                return value;
+                            },
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            color: '#e5e7eb',
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return `Population: ${value.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+
+    // Listen for country selection in statistics tab
+    document.getElementById('statsCountrySelect')?.addEventListener('change', function() {
+        showCountryStats(this.value);
+    });
 
     fetchCountries();
 });
