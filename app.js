@@ -1,7 +1,7 @@
 // Complete Country Information Portal JavaScript
 class CountryPortal {
     constructor() {
-        this.apiEndpoint = 'https://restcountries.com/v3.1/all';
+        this.apiEndpoint = 'https://restcountries.com/v3.1/all?fields=name,flags,region,subregion,population,capital,area,languages,currencies,timezones';
         this.allCountries = [];
         this.filteredCountries = [];
         this.currentPage = 1;
