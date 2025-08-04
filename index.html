@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Countries Portal - Explore Nations</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <i class="fas fa-globe-americas"></i>
+                <span>World Countries Portal</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link active" data-section="home">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="#flags" class="nav-link" data-section="flags">
+                    <i class="fas fa-flag"></i> Flag Gallery
+                </a>
+                <a href="#compare" class="nav-link" data-section="compare">
+                    <i class="fas fa-balance-scale"></i> Compare
+                </a>
+                <a href="#statistics" class="nav-link" data-section="statistics">
+                    <i class="fas fa-chart-bar"></i> Statistics
+                </a>
+            </div>
+            <div class="theme-toggle">
+                <button id="themeToggle" class="theme-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <div class="hero">
+                <h1>Explore the World's Countries</h1>
+                <p>Discover comprehensive information about every nation on Earth</p>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search by country name, capital, or code...">
+                    <button id="clearSearch" class="clear-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <select id="regionFilter" class="filter-select">
+                        <option value="">All Regions</option>
+                        <option value="Africa">Africa</option>
+                        <option value="Americas">Americas</option>
+                        <option value="Asia">Asia</option>
+                        <option value="Europe">Europe</option>
+                        <option value="Oceania">Oceania</option>
+                        <option value="Antarctic">Antarctic</option>
+                    </select>
+                    
+                    <select id="subregionFilter" class="filter-select">
+                        <option value="">All Subregions</option>
+                    </select>
+                    
+                    <select id="sortBy" class="filter-select">
+                        <option value="name">Sort by Name</option>
+                        <option value="population">Sort by Population</option>
+                        <option value="area">Sort by Area</option>
+                        <option value="capital">Sort by Capital</option>
+                    </select>
+                    
+                    <button id="resetFilters" class="reset-btn">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Countries Grid -->
+            <div class="countries-grid" id="countriesGrid">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading countries...</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination"></div>
+        </section>
+
+        <!-- Flag Gallery Section -->
+        <section id="flags" class="section">
+            <div class="section-header">
+                <h2>Flag Gallery</h2>
+                <p>Explore the beautiful flags of nations around the world</p>
+            </div>
+            
+            <div class="flag-filters">
+                <select id="flagRegionFilter" class="filter-select">
+                    <option value="">All Regions</option>
+                    <option value="Africa">Africa</option>
+                    <option value="Americas">Americas</option>
+                    <option value="Asia">Asia</option>
+                    <option value="Europe">Europe</option>
+                    <option value="Oceania">Oceania</option>
+                </select>
+                
+                <div class="view-toggle">
+                    <button id="gridView" class="view-btn active">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button id="listView" class="view-btn">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flags-container" id="flagsContainer">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading flags...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compare Section -->
+        <section id="compare" class="section">
+            <div class="section-header">
+                <h2>Country Comparison</h2>
+                <p>Compare countries side by side</p>
+            </div>
+            
+            <div class="compare-selectors">
+                <div class="country-selector">
+                    <label>Select First Country</label>
+                    <select id="compareCountry1" class="filter-select">
+                        <option value="">Choose a country...</option>
+                    </select>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="country-selector">
+                    <label>Select Second Country</label>
+                    <select id="compareCountry2" class="filter-select">
+                        <option value="">Choose a country...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="comparison-result" id="comparisonResult"></div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section id="statistics" class="section">
+            <div class="section-header">
+                <h2>World Statistics</h2>
+                <p>Interesting facts and figures about world countries</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalCountries">0</h3>
+                        <p>Total Countries</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPopulation">0</h3>
+                        <p>World Population</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalArea">0</h3>
+                        <p>Total Land Area</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalLanguages">0</h3>
+                        <p>Languages Spoken</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Countries by Region</h3>
+                    <canvas id="regionChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Top 10 Most Populous Countries</h3>
+                    <canvas id="populationChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Country Detail Modal -->
+    <div id="countryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalCountryName"></h2>
+                <button class="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Country details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Flag Modal -->
+    <div id="flagModal" class="modal">
+        <div class="modal-content flag-modal-content">
+            <button class="close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="flag-modal-body">
+                <img id="modalFlagImg" src="" alt="">
+                <div class="flag-info">
+                    <h3 id="modalFlagCountry"></h3>
+                    <p id="modalFlagDetails"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
