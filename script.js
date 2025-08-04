@@ -48,6 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
             initializeApp();
         } catch (error) {
             console.error(error);
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorMessage) {
+                errorMessage.style.display = 'flex';
+                errorMessage.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Failed to load country data. Please try again later.<br><small>${error.message}</small>`;
+            }
         }
     }
 
