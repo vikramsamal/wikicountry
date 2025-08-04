@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const apiEndpoint = 'https://restcountries.com/v3.1/all';
+    // Use only name and flags fields from the API
+    const apiEndpoint = 'https://restcountries.com/v3.1/all?fields=name,flags';
     const themeToggle = document.getElementById('themeToggle');
     const searchInput = document.getElementById('searchInput');
     const clearSearch = document.getElementById('clearSearch');
